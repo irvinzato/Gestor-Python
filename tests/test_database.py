@@ -1,5 +1,6 @@
 import unittest
 import database as db
+import helpers
 import copy
 
 #Utilice el paquete "pytest" para utilizar las pruebas "pytest -v" comprueba en el directorio de pruebas los tests
@@ -8,7 +9,8 @@ class TestDataBase(unittest.TestCase):
     def setUp(self):
         db.Clientes.lista = [ db.Cliente("27S", "Irving", "Rivera"), db.Cliente("52L", "Angeles", "Lopez"),
                               db.Cliente("34R", "Jesus" , "Rivera"), db.Cliente("47W", "Laura"  , "Lopez") ]
-        
+
+    ### Validaciones de "database" ###
     def test_buscar_cliente(self):
         cliente_existente   = db.Clientes.buscar("27S")
         cliente_inexistente = db.Clientes.buscar("69S")
@@ -33,3 +35,10 @@ class TestDataBase(unittest.TestCase):
         buscar_cliente    = db.Clientes.buscar("27S")
         self.assertIsNotNone(cliente_eliminado)
         self.assertIsNone(buscar_cliente)
+
+
+    ### Validaciones de "helpers" ###
+    def test_ine_valido(self):
+        self.assertTrue(helpers.ine_valido('10A', db.Clientes.lista))
+        self.assertFalse(helpers.ine_valido('27S', db.Clientes.lista))
+        self.assertFalse(helpers.ine_valido('aaa', db.Clientes.lista))
