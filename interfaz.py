@@ -70,6 +70,7 @@ class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
                 parent='', index='end', iid=self.ine.get(),  #Con ".get()" porque son campos de texto(Entrys)
                 values=(self.ine.get(), self.nombre.get(), self.apellido.get())
             )
+        db.Clientes.crear(self.ine.get(), self.nombre.get(), self.apellido.get())
         self.cerrar()
 
     def validar(self, evento, indice):
@@ -174,6 +175,7 @@ class VentanaEditarCliente(Toplevel, CentrarVentanaMixin):
     def editar_cliente(self):
         cliente = self.master.treeview.focus()
         self.master.treeview.item(cliente, values=(self.ine.get(), self.nombre.get(), self.apellido.get()))
+        db.Clientes.modificar(self.ine.get(), self.nombre.get(), self.apellido.get())
         self.cerrar()
 
     def validar(self, evento, indice):
@@ -246,6 +248,7 @@ class MainWindow(Tk, CentrarVentanaMixin):
             )
             if confirmar:
                 self.treeview.delete(cliente)
+                db.Clientes.borrar(campos[0])
 
     def crear(self):
         VentanaCrearCliente(self)
