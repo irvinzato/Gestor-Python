@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.messagebox import askokcancel, WARNING
 import database as db
+import helpers
 
 #Un mixin es una clase que contiene una o varias definiciones y podemos heredarlas en otras clases
 class CentrarVentanaMixin:
@@ -15,10 +16,10 @@ class CentrarVentanaMixin:
         y  = int(hs/2 - h/2) #Altura de la pantalla entre 2 menos altura de la ventana entre 2
         self.geometry(f"{w}x{h}+{x}+{y}") #WIDTHxHEIGHT+OFFSET_X+OFFSET_Y
 
-
+                        #"Toplevel" maneja las sub ventanas de "TK"
 class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
     def __init__(self, padre):
-        super().__init__(padre) #Llamo al constructor de la clase heredada(Toplevel)
+        super().__init__(padre) #Llamo al constructor de la clase heredada
         self.title("Crear cliente")
         self.build()
         self.centrar_ventana()
@@ -36,10 +37,15 @@ class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
 
         ine = Entry(marco)
         ine.grid(row=1, column=0)
+        ine.bind("<KeyRelease>", lambda evento: self.validar(evento, 0)) #Configuración del evento, para poder pasarle parámetros se ocupa usar función anonima(lambda)
+
         nombre = Entry(marco)
         nombre.grid(row=1, column=1)
+        nombre.bind("<KeyRelease>", lambda evento: self.validar(evento, 1))
+
         apellido = Entry(marco)
         apellido.grid(row=1, column=2)
+        apellido.bind("<KeyRelease>", lambda evento: self.validar(evento, 2))
 
         marco_2 = Frame(self)
         marco_2.pack(pady=10)
@@ -51,6 +57,39 @@ class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
 
     def crear_cliente(self):
         pass
+
+    def validar(self, evento, indice):
+        """ ¡ Todo este código lo refactorice abajo con operadores ternarios !
+        valor = evento.widget.get() #Recupero lo que tiene el campo de la ventana
+        if indice == 0:
+            valido = helpers.ine_valido(valor, db.Clientes.lista)
+            if valido:
+                evento.widget.configure({"bg": "Green"})
+            else:
+                evento.widget.configure({"bg": "Red"})
+        if indice == 1:
+            #"isalpha()" es una función que retorna True si la cadena recuperada es alfabetica(Tambien podria hacer mi propia función para validar, como el ine)
+            valido = valor.isalpha() and len(valor) >= 2 and len(valor) <= 30
+            if valido:
+                evento.widget.configure({"bg": "Green"})
+            else:
+                evento.widget.configure({"bg": "Red"})
+        if indice == 2:
+            valido = valor.isalpha() and len(valor) >= 2 and len(valor) <= 30
+            if valido:
+                evento.widget.configure({"bg": "Green"})
+            else:
+                evento.widget.configure({"bg": "Red"})
+        """
+        
+        valor = evento.widget.get() #Recupero lo que tiene el campo de la ventana
+        if indice == 0:
+            evento.widget.configure({"bg": "Green"}) if helpers.ine_valido(valor, db.Clientes.lista) else evento.widget.configure({"bg": "Red"})
+        if indice == 1:
+            evento.widget.configure({"bg": "Green"}) if valor.isalpha() and len(valor) >= 2 and len(valor) <= 30 else evento.widget.configure({"bg": "Red"})
+        if indice == 2:
+            evento.widget.configure({"bg": "Green"}) if valor.isalpha() and len(valor) >= 2 and len(valor) <= 30 else evento.widget.configure({"bg": "Red"})
+        """ ¡ Mi solución anterior la puedo reducir aun más ! """
 
     ### Para cerrar un "Toplevel" ###
     def cerrar(self):
