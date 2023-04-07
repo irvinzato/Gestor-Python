@@ -16,6 +16,7 @@ class CentrarVentanaMixin:
         y  = int(hs/2 - h/2) #Altura de la pantalla entre 2 menos altura de la ventana entre 2
         self.geometry(f"{w}x{h}+{x}+{y}") #WIDTHxHEIGHT+OFFSET_X+OFFSET_Y
 
+
                         #"Toplevel" maneja las sub ventanas de "TK", automáticamente la Sub ventana sabe quien es su padre
 class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
     def __init__(self, padre):
@@ -55,7 +56,7 @@ class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
         crear.grid(row=0, column=0)
         Button(marco_2, text="Cancelar", command=self.cerrar).grid(row=0, column=1)
 
-        self.validaciones = [0, 0, 0] #Trenre un [True, True, True] si todo esta validado correctamente
+        self.validaciones = [0, 0, 0] #Tendre un [True, True, True] si todo esta validado correctamente
         
         #Exporto las variables para poder usarlas en otros métodos de la clase
         self.crear    = crear            #Asigno el valor del botón(crear) para poder usarlo en las validaciones
@@ -116,6 +117,78 @@ class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
         self.destroy()
         self.update()
 
+
+class VentanaEditarCliente(Toplevel, CentrarVentanaMixin):
+    def __init__(self, padre):
+        super().__init__(padre) 
+        self.title("Actualizar cliente")
+        self.build()
+        self.centrar_ventana()
+        #Para impedir hacer acción en la otra ventana si tenemos esta abierta "transient" y "grab_set"
+        self.transient(padre)
+        self.grab_set()
+
+    def build(self):
+        marco = Frame(self) #Aquí si pide el self, para que el frame lo ponga dentro de "VentanaCrearCliente"
+        marco.pack(padx=20, pady=10)
+
+        Label(marco, text="INE (NO EDITABLE)").grid(row=0, column=0)
+        Label(marco, text="Nombre (2 a 30 carácteres)").grid(row=0, column=1)
+        Label(marco, text="Apellido (2 a 30 carácteres)").grid(row=0, column=2)
+
+        ine = Entry(marco)
+        ine.grid(row=1, column=0)
+
+        nombre = Entry(marco)
+        nombre.grid(row=1, column=1)
+        nombre.bind("<KeyRelease>", lambda evento: self.validar(evento, 0))
+
+        apellido = Entry(marco)
+        apellido.grid(row=1, column=2)
+        apellido.bind("<KeyRelease>", lambda evento: self.validar(evento, 1))
+
+        ### Recupero los valores donde esta el foco(de la ventana principal) y los agrego en los campos Entry ###
+        cliente = self.master.treeview.focus()
+        campos  = self.master.treeview.item(cliente, 'values')
+        
+        ine.insert(0, campos[0])  #Añado en la primera posicion del campo el valor recuperado del "master"
+        ine.config(state=DISABLED)
+        nombre.insert(0, campos[1])
+        apellido.insert(0, campos[2])
+
+
+        marco_2 = Frame(self)
+        marco_2.pack(pady=10)
+
+        actualizar = Button(marco_2, text="Actualizar", command=self.editar_cliente)
+        actualizar.grid(row=0, column=0)
+        Button(marco_2, text="Cancelar", command=self.cerrar).grid(row=0, column=1)
+
+        self.validaciones = [1, 1] #[True, True] por defecto porque cargo los valores con algo que ya esta validado
+        
+        self.actualizar = actualizar
+        self.ine        = ine
+        self.nombre     = nombre
+        self.apellido   = apellido
+
+    def editar_cliente(self):
+        cliente = self.master.treeview.focus()
+        self.master.treeview.item(cliente, values=(self.ine.get(), self.nombre.get(), self.apellido.get()))
+        self.cerrar()
+
+    def validar(self, evento, indice):
+        valor  = evento.widget.get() #Recupero lo que tiene el campo de la ventana
+        valido = valor.isalpha() and len(valor) >= 2 and len(valor) <= 30
+        evento.widget.configure({"bg": "Green" if valido else "Red"})
+        ### Cambiare el estado del botón en base a las validaciones ###
+        self.validaciones[indice] = valido
+        self.actualizar.config(state=NORMAL if self.validaciones == [True, True] else DISABLED)  #Cambio estado del botón
+
+    def cerrar(self):
+        self.destroy()
+        self.update()
+
+### CLASE PRINCIPAL ###
 class MainWindow(Tk, CentrarVentanaMixin):
     def __init__(self):
         super().__init__() #Llamo al constructor de la clase heredada(Tk)
@@ -156,9 +229,9 @@ class MainWindow(Tk, CentrarVentanaMixin):
         marco_2 = Frame(self)
         marco_2.pack(pady=20)
 
-        Button(marco_2, padx=20, bd=5, text="Crear", command=self.crear).grid(row=0, column=0)
-        Button(marco_2, padx=20, bd=5, text="Modificar", command=None).grid(row=0, column=1)
-        Button(marco_2, padx=20, bd=5, text="Borrar", command=self.borrar).grid(row=0, column=2) #Al llamar el metodo aqui no se usa con "()"
+        Button(marco_2, padx=20, bd=5, text="Crear",     command=self.crear).grid(row=0, column=0)
+        Button(marco_2, padx=20, bd=5, text="Modificar", command=self.editar).grid(row=0, column=1)
+        Button(marco_2, padx=20, bd=5, text="Borrar",    command=self.borrar).grid(row=0, column=2) #Al llamar el metodo aqui no se usa con "()"
 
         self.treeview = treeview #Para poder tener acceso a el en los demas métodos
 
@@ -176,6 +249,10 @@ class MainWindow(Tk, CentrarVentanaMixin):
 
     def crear(self):
         VentanaCrearCliente(self)
+
+    def editar(self):
+        if self.treeview.focus():
+            VentanaEditarCliente(self)
 
 if __name__ == "__main__":
     app = MainWindow()
