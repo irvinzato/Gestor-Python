@@ -16,7 +16,7 @@ class CentrarVentanaMixin:
         y  = int(hs/2 - h/2) #Altura de la pantalla entre 2 menos altura de la ventana entre 2
         self.geometry(f"{w}x{h}+{x}+{y}") #WIDTHxHEIGHT+OFFSET_X+OFFSET_Y
 
-                        #"Toplevel" maneja las sub ventanas de "TK"
+                        #"Toplevel" maneja las sub ventanas de "TK", automáticamente la Sub ventana sabe quien es su padre
 class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
     def __init__(self, padre):
         super().__init__(padre) #Llamo al constructor de la clase heredada
@@ -55,8 +55,21 @@ class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
         crear.grid(row=0, column=0)
         Button(marco_2, text="Cancelar", command=self.cerrar).grid(row=0, column=1)
 
+        self.validaciones = [0, 0, 0] #Trenre un [True, True, True] si todo esta validado correctamente
+        
+        #Exporto las variables para poder usarlas en otros métodos de la clase
+        self.crear    = crear            #Asigno el valor del botón(crear) para poder usarlo en las validaciones
+        self.ine      = ine
+        self.nombre   = nombre
+        self.apellido = apellido
+
     def crear_cliente(self):
-        pass
+        #"master" es el padre de la sub ventana(ventana principal)
+        self.master.treeview.insert(
+                parent='', index='end', iid=self.ine.get(),  #Con ".get()" porque son campos de texto(Entrys)
+                values=(self.ine.get(), self.nombre.get(), self.apellido.get())
+            )
+        self.cerrar()
 
     def validar(self, evento, indice):
         """ ¡ Todo este código lo refactorice abajo con operadores ternarios !
@@ -81,15 +94,22 @@ class VentanaCrearCliente(Toplevel, CentrarVentanaMixin):
             else:
                 evento.widget.configure({"bg": "Red"})
         """
-        
-        valor = evento.widget.get() #Recupero lo que tiene el campo de la ventana
+        """ valor = evento.widget.get() #Recupero lo que tiene el campo de la ventana
         if indice == 0:
             evento.widget.configure({"bg": "Green"}) if helpers.ine_valido(valor, db.Clientes.lista) else evento.widget.configure({"bg": "Red"})
         if indice == 1:
             evento.widget.configure({"bg": "Green"}) if valor.isalpha() and len(valor) >= 2 and len(valor) <= 30 else evento.widget.configure({"bg": "Red"})
         if indice == 2:
             evento.widget.configure({"bg": "Green"}) if valor.isalpha() and len(valor) >= 2 and len(valor) <= 30 else evento.widget.configure({"bg": "Red"})
+        """
         """ ¡ Mi solución anterior la puedo reducir aun más ! """
+        ## La mejor solución de las dos anteriores ##
+        valor = evento.widget.get() #Recupero lo que tiene el campo de la ventana
+        valido = helpers.ine_valido(valor, db.Clientes.lista) if indice == 0 else valor.isalpha() and len(valor) >= 2 and len(valor) <= 30
+        evento.widget.configure({"bg": "Green" if valido else "Red"})
+        ### Cambiare el estado del botón en base a las validaciones ###
+        self.validaciones[indice] = valido
+        self.crear.config(state=NORMAL if self.validaciones == [True, True, True] else DISABLED)  #Cambio estado del botón
 
     ### Para cerrar un "Toplevel" ###
     def cerrar(self):
